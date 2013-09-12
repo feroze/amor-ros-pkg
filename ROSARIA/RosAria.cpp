@@ -15,6 +15,7 @@
 #include "tf/transform_datatypes.h"
 #include <dynamic_reconfigure/server.h>
 #include <ROSARIA/AccelerationsConfig.h>
+#include "std_msgs/Float64.h"
 
 #include <sstream>
 
@@ -69,6 +70,7 @@ class RosAriaNode
     ros::Publisher pose_pub;
     ros::Publisher bumpers_pub;
     ros::Publisher sonar_pub;
+    ros::Publisher battery_pub;
     ros::Subscriber cmdvel_sub;
 
     ros::Time veltime;
@@ -173,6 +175,8 @@ RosAriaNode::RosAriaNode(ros::NodeHandle nh) :
   bumpers_pub = n.advertise<ROSARIA::BumperState>("bumper_state",1000);
   sonar_pub = n.advertise<sensor_msgs::PointCloud>("sonar", 50, boost::bind(&RosAriaNode::sonarConnectCb, this),
     boost::bind(&RosAriaNode::sonarConnectCb, this));
+
+  battery_pub = n.advertise<std_msgs::Float64>("battery", 1000);
   
   // subscribe to services
   cmdvel_sub = n.subscribe( "cmd_vel", 1, (boost::function <void(const geometry_msgs::TwistConstPtr&)>)
@@ -321,6 +325,13 @@ void RosAriaNode::publish()
   ROS_DEBUG("RosAria: Rear bumpers:%s", bumper_info.str().c_str());
   
   bumpers_pub.publish(bumpers);
+
+  //Publish battery information
+  // Decide if RealBatteryVoltage or BatteryVoltageNow is a better option
+  // TODO Add BatteryCharge
+  std_msgs::Float64 batteryVoltage;
+  batteryVoltage.data = robot->getBatteryVoltage();
+  battery_pub.publish(batteryVoltage);
 
   // Publish sonar information, if necessary.
   if (use_sonar) {
