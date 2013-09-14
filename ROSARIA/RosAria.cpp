@@ -86,7 +86,7 @@ class RosAriaNode
     ROSARIA::BumperState bumpers;
     ArPose pos;
     ArFunctorC<RosAriaNode> myPublishCB;
-    ArRobot::ChargeState batteryCharge;
+    //ArRobot::ChargeState batteryCharge;
 
     //for odom->base_link transform
     tf::TransformBroadcaster odom_broadcaster;
@@ -180,7 +180,7 @@ RosAriaNode::RosAriaNode(ros::NodeHandle nh) :
     boost::bind(&RosAriaNode::sonarConnectCb, this));
 
   voltage_pub = n.advertise<std_msgs::Float64>("BatteryVoltage", 1000);
-  //charge_pub = n.advertise<std_msgs::Int8>("BatteryCharge", 1000);
+  charge_pub = n.advertise<std_msgs::Int8>("BatteryCharge", 1000);
   
   // subscribe to services
   cmdvel_sub = n.subscribe( "cmd_vel", 1, (boost::function <void(const geometry_msgs::TwistConstPtr&)>)
@@ -337,8 +337,10 @@ void RosAriaNode::publish()
   batteryVoltage.data = robot->getBatteryVoltage();
   voltage_pub.publish(batteryVoltage);
 
-  batteryCharge = robot->getChargeState();
- // charge_pub.publish(batteryCharge);
+ // batteryCharge = robot->getChargeState();
+  std_msgs::Int8 temp;
+  temp.data = robot->getChargeState();
+  charge_pub.publish(temp);
 
   // Publish sonar information, if necessary.
   if (use_sonar) {
