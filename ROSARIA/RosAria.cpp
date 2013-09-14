@@ -16,6 +16,7 @@
 #include <dynamic_reconfigure/server.h>
 #include <ROSARIA/AccelerationsConfig.h>
 #include "std_msgs/Float64.h"
+#include "std_msgs/Int8.h"
 
 #include <sstream>
 
@@ -70,7 +71,8 @@ class RosAriaNode
     ros::Publisher pose_pub;
     ros::Publisher bumpers_pub;
     ros::Publisher sonar_pub;
-    ros::Publisher battery_pub;
+    ros::Publisher voltage_pub;
+    ros::Publisher charge_pub;
     ros::Subscriber cmdvel_sub;
 
     ros::Time veltime;
@@ -84,6 +86,7 @@ class RosAriaNode
     ROSARIA::BumperState bumpers;
     ArPose pos;
     ArFunctorC<RosAriaNode> myPublishCB;
+    ArRobot::ChargeState batteryCharge;
 
     //for odom->base_link transform
     tf::TransformBroadcaster odom_broadcaster;
@@ -176,7 +179,8 @@ RosAriaNode::RosAriaNode(ros::NodeHandle nh) :
   sonar_pub = n.advertise<sensor_msgs::PointCloud>("sonar", 50, boost::bind(&RosAriaNode::sonarConnectCb, this),
     boost::bind(&RosAriaNode::sonarConnectCb, this));
 
-  battery_pub = n.advertise<std_msgs::Float64>("battery", 1000);
+  voltage_pub = n.advertise<std_msgs::Float64>("BatteryVoltage", 1000);
+  //charge_pub = n.advertise<std_msgs::Int8>("BatteryCharge", 1000);
   
   // subscribe to services
   cmdvel_sub = n.subscribe( "cmd_vel", 1, (boost::function <void(const geometry_msgs::TwistConstPtr&)>)
@@ -331,7 +335,10 @@ void RosAriaNode::publish()
   // TODO Add BatteryCharge
   std_msgs::Float64 batteryVoltage;
   batteryVoltage.data = robot->getBatteryVoltage();
-  battery_pub.publish(batteryVoltage);
+  voltage_pub.publish(batteryVoltage);
+
+  batteryCharge = robot->getChargeState();
+ // charge_pub.publish(batteryCharge);
 
   // Publish sonar information, if necessary.
   if (use_sonar) {
